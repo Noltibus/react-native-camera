@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.CamcorderProfile;
 import android.os.Build;
+import android.util.Log;
 import androidx.core.content.ContextCompat;
 import android.view.View;
 import android.os.AsyncTask;
@@ -517,10 +518,14 @@ public class RNCameraView extends CameraView implements LifecycleEventListener, 
       mBgHandler.post(new Runnable() {
         @Override
         public void run() {
-          if ((mIsPaused && !isCameraOpened()) || mIsNew) {
-            mIsPaused = false;
-            mIsNew = false;
-            start();
+          try {
+            if ((mIsPaused && !isCameraOpened()) || mIsNew) {
+              mIsPaused = false;
+              mIsNew = false;
+              start();
+            }
+          } catch (Exception ex) {
+            Log.e("RNCameraView", "onHostResume error");
           }
         }
       });
