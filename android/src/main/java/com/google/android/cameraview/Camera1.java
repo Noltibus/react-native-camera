@@ -1055,7 +1055,6 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
 
         if(size == null) {
             Log.e("Camera1", "Critical error: supported sizes for camera was null");
-            //return;
         }
 
         // Always re-apply camera parameters
@@ -1065,7 +1064,9 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
             mCamera.stopPreview();
             mIsPreviewActive = false;
         }
-        //mCameraParameters.setPreviewSize(size.getWidth(), size.getHeight());
+        if(size != null) {
+            mCameraParameters.setPreviewSize(size.getWidth(), size.getHeight());
+        }
         mCameraParameters.setPictureSize(mPictureSize.getWidth(), mPictureSize.getHeight());
         if (mOrientation != Constants.ORIENTATION_AUTO) {
             mCameraParameters.setRotation(calcCameraRotation(orientationEnumToRotation(mOrientation)));
