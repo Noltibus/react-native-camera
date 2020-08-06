@@ -1053,6 +1053,11 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
         }
         Size size = chooseOptimalSize(sizes);
 
+        if(size == null) {
+            Log.e("Camera1", "Critical error: supported sizes for camera was null");
+            //return;
+        }
+
         // Always re-apply camera parameters
         mPictureSize = mPictureSizes.sizes(mAspectRatio).last();
         boolean needsToStopPreview = mIsPreviewActive;
@@ -1060,7 +1065,7 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
             mCamera.stopPreview();
             mIsPreviewActive = false;
         }
-        mCameraParameters.setPreviewSize(size.getWidth(), size.getHeight());
+        //mCameraParameters.setPreviewSize(size.getWidth(), size.getHeight());
         mCameraParameters.setPictureSize(mPictureSize.getWidth(), mPictureSize.getHeight());
         if (mOrientation != Constants.ORIENTATION_AUTO) {
             mCameraParameters.setRotation(calcCameraRotation(orientationEnumToRotation(mOrientation)));
@@ -1105,12 +1110,14 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
             desiredHeight = surfaceHeight;
         }
         Size result = null;
-        for (Size size : sizes) { // Iterate from small to large
-            if (desiredWidth <= size.getWidth() && desiredHeight <= size.getHeight()) {
-                return size;
+        if(sizes != null) {
+            for (Size size : sizes) { // Iterate from small to large
+                if (desiredWidth <= size.getWidth() && desiredHeight <= size.getHeight()) {
+                    return size;
 
+                }
+                result = size;
             }
-            result = size;
         }
         return result;
     }
