@@ -554,8 +554,12 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
         if (!isCameraOpened()) {
             return mAutoFocus;
         }
-        String focusMode = mCameraParameters.getFocusMode();
-        return focusMode != null && focusMode.contains("continuous");
+        if(mCameraParameters != null) {
+            String focusMode = mCameraParameters.getFocusMode();
+            return focusMode != null && focusMode.contains("continuous");
+        } else {
+            return false;
+        }
     }
 
     @Override
