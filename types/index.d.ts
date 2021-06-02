@@ -34,6 +34,13 @@ type WhiteBalance = Readonly<{
   fluorescent: any;
   auto: any;
 }>;
+type CustomWhiteBalance = {
+  temperature: number;
+  tint: number;
+  redGainOffset?: number;
+  greenGainOffset?: number;
+  blueGainOffset?: number;
+};
 type BarCodeType = Readonly<{
   aztec: any;
   code128: any;
@@ -64,6 +71,10 @@ type VideoCodec = Readonly<{
   HVEC: symbol;
   AppleProRes422: symbol;
   AppleProRes4444: symbol;
+}>;
+type ImageType = Readonly<{
+  'jpeg': any;
+  'png': any;
 }>;
 
 type FaceDetectionClassifications = Readonly<{ all: any; none: any }>;
@@ -112,6 +123,7 @@ export interface Constants {
   Type: CameraType;
   WhiteBalance: WhiteBalance;
   VideoQuality: VideoQuality;
+  ImageType: ImageType;
   BarCodeType: BarCodeType;
   FaceDetection: {
     Classifications: FaceDetectionClassifications;
@@ -132,8 +144,36 @@ export interface Constants {
   VideoStabilization: VideoStabilization;
 }
 
+export interface BarCodeReadEvent {
+  data: string;
+  rawData?: string;
+  type: keyof BarCodeType;
+  /**
+   * @description For Android use `{ width: number, height: number, origin: Array<Point<string>> }`
+   * @description For iOS use `{ origin: Point<string>, size: Size<string> }`
+   */
+  bounds:
+    | { width: number; height: number; origin: Array<Point<string>> }
+    | { origin: Point<string>; size: Size<string> };
+  /**
+   * Raw image bytes in JPEG format (quality 100) as Base64-encoded string, only provided if `detectedImageInEvent=true`.
+   */
+  image: string;
+}
+
+export interface GoogleVisionBarcodesDetectedEvent {
+  type: string;
+  barcodes: Barcode[];
+  target: number;
+  /**
+   * Raw image bytes in JPEG format (quality 100) as Base64-encoded string, only provided if `detectedImageInEvent=true`.
+   */
+  image?: string;
+}
+
 export interface RNCameraProps {
   children?: ReactNode | FaCC;
+  cameraId?: string;
 
   autoFocus?: keyof AutoFocus;
   autoFocusPointOfInterest?: Point;
@@ -147,7 +187,7 @@ export interface RNCameraProps {
   pendingAuthorizationView?: JSX.Element;
   useCamera2Api?: boolean;
   exposure?: number;
-  whiteBalance?: keyof WhiteBalance;
+  whiteBalance?: keyof WhiteBalance | CustomWhiteBalance;
   captureAudio?: boolean;
 
   onCameraReady?(): void;
@@ -170,7 +210,10 @@ export interface RNCameraProps {
   /** iOS only */
   onAudioInterrupted?(): void;
   onAudioConnected?(): void;
-
+  onTap?(origin: Point): void;
+  onDoubleTap?(origin: Point): void;
+  /** Use native pinch to zoom implementation*/
+  useNativeZoom?: boolean;
   /** Value: float from 0 to 1.0 */
   zoom?: number;
   /** iOS only. float from 0 to any. Locks the max zoom value to the provided value
@@ -182,26 +225,15 @@ export interface RNCameraProps {
   focusDepth?: number;
 
   // -- BARCODE PROPS
+  detectedImageInEvent?: boolean;
   barCodeTypes?: Array<keyof BarCodeType>;
   googleVisionBarcodeType?: Constants['GoogleVisionBarcodeDetection']['BarcodeType'];
   googleVisionBarcodeMode?: Constants['GoogleVisionBarcodeDetection']['BarcodeMode'];
-  onBarCodeRead?(event: {
-    data: string;
-    rawData?: string;
-    type: keyof BarCodeType;
-    /**
-     * @description For Android use `{ width: number, height: number, origin: Array<Point<string>> }`
-     * @description For iOS use `{ origin: Point<string>, size: Size<string> }`
-     */
-    bounds:
-      | { width: number; height: number; origin: Array<Point<string>> }
-      | { origin: Point<string>; size: Size<string> };
-  }): void;
-
-  onGoogleVisionBarcodesDetected?(event: { barcodes: Barcode[] }): void;
+  onBarCodeRead?(event: BarCodeReadEvent): void;
+  onGoogleVisionBarcodesDetected?(event: GoogleVisionBarcodesDetectedEvent): void;
 
   // limiting scan area
-  rectOfInterest?: Point;
+  rectOfInterest?: RectOfInterest;
 
   // -- FACE DETECTION PROPS
 
@@ -222,6 +254,8 @@ export interface RNCameraProps {
   permissionDialogMessage?: string;
   /** Android only */
   playSoundOnCapture?: boolean;
+  /** Android only */
+  playSoundOnRecord?: boolean;
 
   androidCameraPermissionOptions?: {
     title: string;
@@ -258,6 +292,8 @@ interface Size<T = number> {
   width: T;
   height: T;
 }
+
+interface RectOfInterest extends Point,Size{}
 
 export interface Barcode {
   bounds: {
@@ -399,6 +435,7 @@ interface TakePictureOptions {
 
   /** iOS only */
   forceUpOrientation?: boolean;
+  imageType?: keyof ImageType;
 }
 
 export interface TakePictureResponse {
@@ -452,6 +489,8 @@ export class RNCamera extends Component<RNCameraProps & ViewProperties> {
 
   /** Android only */
   getSupportedRatiosAsync(): Promise<string[]>;
+  getSupportedPreviewFpsRange: Promise<string[]>;
+  static checkIfVideoIsValid: Promise<boolean>;
 
   /** iOS only */
   isRecording(): Promise<boolean>;
