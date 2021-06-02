@@ -818,9 +818,6 @@ class Camera1 extends CameraViewImpl implements MediaRecorder.OnInfoListener,
                                     mIsPreviewActive = false;
                                     mCamera.setPreviewCallback(null);
                                 }
-                            } catch(Exception ex) {
-                                Log.e("Camera1", ex.getMessage());
-                                mIsPreviewActive = false;
                             }
                         }
 
